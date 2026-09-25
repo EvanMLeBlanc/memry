@@ -44,11 +44,13 @@
     background:linear-gradient(180deg,var(--cream) 0%, var(--cream-2) 100%);
   }
 
+  /* ---------------- header ---------------- */
   header{
     background:linear-gradient(135deg,var(--forest-deep) 0%, var(--forest) 58%, var(--brown) 145%);
     color:var(--cream);
     padding:calc(var(--safe-top) + 14px) calc(var(--safe-r) + 18px) 14px calc(var(--safe-l) + 18px);
     flex:0 0 auto;position:relative;
+    transition:padding .22s ease;
   }
   header:after{
     content:"";position:absolute;left:0;right:0;bottom:0;height:3px;
@@ -60,8 +62,10 @@
     background:radial-gradient(circle at 32% 30%, var(--orange-soft), var(--orange) 62%, #B4661B 100%);
     display:flex;align-items:center;justify-content:center;font-size:18px;
     box-shadow:0 3px 10px rgba(0,0,0,.32);
+    transition:width .22s ease,height .22s ease,font-size .22s ease;
   }
-  h1{margin:0;font-size:25px;letter-spacing:1.2px;font-weight:700;line-height:1.05;}
+  h1{margin:0;font-size:25px;letter-spacing:1.2px;font-weight:700;line-height:1.05;
+     transition:font-size .22s ease;}
   .tag{font-size:10px;letter-spacing:2.2px;text-transform:uppercase;color:var(--orange-soft);margin-top:2px;}
   .gear{
     margin-left:auto;background:rgba(255,255,255,.12);border:none;
@@ -69,11 +73,53 @@
     font-size:17px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;
   }
   .gear:active{background:rgba(255,255,255,.24);}
-  .meta{margin-top:11px;}
+  .meta{margin-top:11px;overflow:hidden;transition:max-height .22s ease,opacity .18s ease,margin .22s ease;
+        max-height:48px;opacity:1;}
   .today{font-size:13.5px;font-weight:600;color:#EBDCC6;}
   .welcome{font-size:12.5px;color:#C2B29B;font-style:italic;margin-top:2px;}
 
-  /* ---- offline readiness banner ---- */
+  /* When the keyboard is up, collapse the header to buy vertical room. */
+  body.kb header{padding-top:calc(var(--safe-top) + 8px);padding-bottom:8px;}
+  body.kb .meta{max-height:0;opacity:0;margin-top:0;}
+  body.kb h1{font-size:20px;}
+  body.kb .logo{width:30px;height:30px;font-size:15px;}
+  body.kb .tag{display:none;}
+
+  /* ---------------- composer (now at the TOP) ---------------- */
+  .composer{
+    flex:0 0 auto;
+    padding:12px calc(var(--safe-r) + 14px) 12px calc(var(--safe-l) + 14px);
+    background:rgba(255,253,248,.99);
+    border-bottom:1px solid rgba(107,74,50,.2);
+    box-shadow:0 5px 16px rgba(43,32,25,.08);
+    position:relative;z-index:6;
+  }
+  .field-wrap{
+    display:flex;align-items:flex-end;gap:9px;background:#FFFDF8;
+    border:2px solid rgba(107,74,50,.26);border-radius:22px;padding:5px 5px 5px 15px;
+    transition:border-color .18s ease,box-shadow .18s ease;
+  }
+  .field-wrap:focus-within{
+    border-color:var(--orange);
+    box-shadow:0 0 0 4px rgba(217,130,43,.15);
+  }
+  #memoryInput{
+    flex:1;border:none;outline:none;background:transparent;font-size:16px;
+    font-family:inherit;color:var(--ink);padding:9px 0;line-height:1.35;
+    resize:none;max-height:120px;min-height:22px;-webkit-user-select:text;user-select:text;
+  }
+  #memoryInput::placeholder{color:#AC9B83;}
+  .send{
+    width:38px;height:38px;border-radius:50%;flex:0 0 auto;
+    background:linear-gradient(135deg,var(--orange) 0%,#C4701F 100%);
+    color:#FFF6E9;border:none;font-size:17px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 3px 9px rgba(180,102,27,.34);transition:transform .12s ease,opacity .18s ease;
+  }
+  .send:active{transform:scale(.9);}
+  .send:disabled{opacity:.35;box-shadow:none;}
+
+  /* ---------------- banners ---------------- */
   .offbar{
     display:none;align-items:center;gap:9px;flex:0 0 auto;
     padding:10px calc(var(--safe-r) + 16px) 10px calc(var(--safe-l) + 16px);
@@ -88,6 +134,7 @@
   .offbar.fail{background:#F6DCD4;color:#8C3118;}
   .offbar.fail .dot{background:#A33B22;}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+  body.kb .offbar{display:none;}
 
   .pending{
     display:none;background:linear-gradient(135deg,var(--orange) 0%,#C4701F 100%);
@@ -103,16 +150,17 @@
 
   .count-row{
     display:flex;justify-content:space-between;align-items:center;gap:10px;
-    padding:11px calc(var(--safe-r) + 18px) 9px calc(var(--safe-l) + 18px);
+    padding:10px calc(var(--safe-r) + 18px) 8px calc(var(--safe-l) + 18px);
     font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;
     color:#9C8A72;font-weight:700;border-bottom:1px dashed rgba(107,74,50,.28);
     flex:0 0 auto;background:rgba(107,74,50,.04);
   }
 
+  /* ---------------- list ---------------- */
   .list-scroll{
     flex:1 1 auto;min-height:0;overflow-y:auto;
     -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
-    padding:14px calc(var(--safe-r) + 16px) 16px calc(var(--safe-l) + 16px);
+    padding:14px calc(var(--safe-r) + 16px) calc(var(--safe-bot) + 20px) calc(var(--safe-l) + 16px);
   }
   ul{list-style:none;margin:0;padding:0;}
   li{
@@ -123,8 +171,9 @@
     box-shadow:0 2px 6px rgba(43,32,25,.07);
     animation:slideIn .32s cubic-bezier(.2,1.1,.4,1);
   }
-  li:nth-child(3n+2){border-left-color:var(--orange);}
-  li:nth-child(3n+3){border-left-color:var(--brown-light);}
+  li.c1{border-left-color:var(--forest-light);}
+  li.c2{border-left-color:var(--orange);}
+  li.c3{border-left-color:var(--brown-light);}
   @keyframes slideIn{from{opacity:0;transform:translateY(-9px) scale(.97);}to{opacity:1;transform:none;}}
   li.leaving{animation:fadeOut .24s ease forwards;}
   @keyframes fadeOut{to{opacity:0;transform:translateX(18px);height:0;margin:0;padding-top:0;padding-bottom:0;border-width:0;}}
@@ -140,36 +189,10 @@
   }
   .kill:active{color:#A33B22;background:rgba(163,59,34,.12);}
 
-  .empty{text-align:center;color:#A8977F;padding:44px 22px;font-style:italic;font-size:14.5px;line-height:1.5;}
+  .empty{text-align:center;color:#A8977F;padding:40px 22px;font-style:italic;font-size:14.5px;line-height:1.5;}
   .empty .big{font-size:38px;display:block;margin-bottom:10px;font-style:normal;}
 
-  .composer{
-    flex:0 0 auto;
-    padding:10px calc(var(--safe-r) + 14px) calc(var(--safe-bot) + 10px) calc(var(--safe-l) + 14px);
-    background:rgba(255,253,248,.97);border-top:1px solid rgba(107,74,50,.18);
-    box-shadow:0 -5px 18px rgba(43,32,25,.07);
-  }
-  .field-wrap{
-    display:flex;align-items:flex-end;gap:9px;background:#FFFDF8;
-    border:2px solid rgba(107,74,50,.26);border-radius:22px;padding:5px 5px 5px 15px;
-  }
-  .field-wrap:focus-within{border-color:var(--orange);}
-  #memoryInput{
-    flex:1;border:none;outline:none;background:transparent;font-size:16px;
-    font-family:inherit;color:var(--ink);padding:9px 0;line-height:1.35;
-    resize:none;max-height:104px;min-height:22px;-webkit-user-select:text;user-select:text;
-  }
-  #memoryInput::placeholder{color:#AC9B83;}
-  .send{
-    width:38px;height:38px;border-radius:50%;flex:0 0 auto;
-    background:linear-gradient(135deg,var(--orange) 0%,#C4701F 100%);
-    color:#FFF6E9;border:none;font-size:17px;
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:0 3px 9px rgba(180,102,27,.34);transition:transform .12s ease,opacity .18s ease;
-  }
-  .send:active{transform:scale(.9);}
-  .send:disabled{opacity:.35;box-shadow:none;}
-
+  /* ---------------- sheet ---------------- */
   .scrim{
     position:fixed;inset:0;background:rgba(20,14,10,.5);opacity:0;pointer-events:none;
     transition:opacity .25s ease;z-index:30;
@@ -210,23 +233,25 @@
   }
   .fineprint{margin-top:14px;font-size:10.5px;color:#A8977F;text-align:center;line-height:1.5;}
 
+  /* ---------------- bubble + toast ---------------- */
   .bubble{
     position:fixed;z-index:12;pointer-events:none;
-    display:flex;flex-direction:column;align-items:center;gap:3px;
-    animation:float-up 2.5s ease-out forwards;
+    display:flex;flex-direction:column-reverse;align-items:center;gap:3px;
+    animation:float-down 2.3s ease-out forwards;
   }
   .bubble .puff{background:rgba(255,253,248,.95);border:2px solid rgba(62,107,78,.45);border-radius:50%;box-shadow:0 4px 14px rgba(0,0,0,.2);}
   .bubble .p1{width:48px;height:36px;display:flex;align-items:center;justify-content:center;font-size:17px;}
   .bubble .p2{width:14px;height:14px;}
   .bubble .p3{width:8px;height:8px;}
-  @keyframes float-up{
-    0%{opacity:0;transform:translateY(16px) scale(.5) rotate(-6deg);}
-    14%{opacity:1;transform:translateY(0) scale(1) rotate(0deg);}
-    100%{opacity:0;transform:translateY(-62vh) scale(.8) rotate(7deg);}
+  /* composer is at the top now, so the thought drifts downward into the list */
+  @keyframes float-down{
+    0%{opacity:0;transform:translateY(-14px) scale(.5) rotate(6deg);}
+    16%{opacity:1;transform:translateY(0) scale(1) rotate(0deg);}
+    100%{opacity:0;transform:translateY(46vh) scale(.82) rotate(-7deg);}
   }
 
   .toast{
-    position:fixed;left:50%;z-index:40;bottom:calc(var(--safe-bot) + 92px);
+    position:fixed;left:50%;z-index:40;bottom:calc(var(--safe-bot) + 26px);
     transform:translateX(-50%) translateY(120px);
     background:var(--forest-deep);color:var(--cream);padding:12px 18px;border-radius:13px;
     font-size:13.5px;font-weight:600;text-align:center;
@@ -259,6 +284,15 @@
     </div>
   </header>
 
+  <!-- composer sits directly under the header so the keyboard never covers it -->
+  <div class="composer">
+    <div class="field-wrap">
+      <textarea id="memoryInput" rows="1" enterkeyhint="done" autocomplete="off"
+        autocapitalize="sentences" placeholder="What did they just tell you?"></textarea>
+      <button class="send" id="sendBtn" aria-label="Remember this" disabled>↑</button>
+    </div>
+  </div>
+
   <div class="offbar" id="offBar">
     <div class="dot"></div>
     <span id="offText">Preparing offline mode…</span>
@@ -279,14 +313,6 @@
     <div class="empty" id="emptyState">
       <span class="big">🌰</span>
       Nothing stashed yet.<br />Go collect some acorns of wisdom.
-    </div>
-  </div>
-
-  <div class="composer">
-    <div class="field-wrap">
-      <textarea id="memoryInput" rows="1" enterkeyhint="done" autocomplete="off"
-        autocapitalize="sentences" placeholder="What did they just tell you?"></textarea>
-      <button class="send" id="sendBtn" aria-label="Remember this" disabled>↑</button>
     </div>
   </div>
 </div>
@@ -315,6 +341,12 @@
     <div class="switch on" id="soundSwitch"></div>
   </div>
 
+  <div class="row" id="rowOrder"><div class="ico">🔀</div>
+    <div class="lbl">Newest at top
+      <div class="desc" id="orderDesc">New notes appear right under the text box.</div></div>
+    <div class="switch on" id="orderSwitch"></div>
+  </div>
+
   <div class="row" id="rowOffline"><div class="ico">📶</div>
     <div class="lbl">Offline status
       <div class="desc" id="offDesc">Checking…</div></div>
@@ -326,7 +358,7 @@
   </div>
 
   <button class="sheet-close" id="sheetClose">Done</button>
-  <div class="fineprint">Memry v1.1 &nbsp;·&nbsp; no accounts, no tracking</div>
+  <div class="fineprint">Memry v1.2 &nbsp;·&nbsp; no accounts, no tracking</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -465,7 +497,7 @@
 
   var LS_ITEMS="memry.items.v1", LS_COUNT="memry.exportCount.v1",
       LS_AUTO="memry.autoExport.v1", LS_SOUND="memry.sound.v1",
-      LS_LASTAUTO="memry.lastAutoDate.v1";
+      LS_ORDER="memry.newestTop.v1", LS_LASTAUTO="memry.lastAutoDate.v1";
 
   var mem = {};
   var store = {
@@ -478,14 +510,17 @@
   var input=$("memoryInput"), sendBtn=$("sendBtn"), listEl=$("memoryList"),
       listScroll=$("listScroll"), emptyEl=$("emptyState"), countLabel=$("countLabel"),
       nextFileEl=$("nextFile"), toastEl=$("toast"), sheet=$("sheet"), scrim=$("scrim"),
-      autoSwitch=$("autoSwitch"), soundSwitch=$("soundSwitch"), autoDesc=$("autoDesc"),
+      autoSwitch=$("autoSwitch"), soundSwitch=$("soundSwitch"), orderSwitch=$("orderSwitch"),
+      autoDesc=$("autoDesc"), orderDesc=$("orderDesc"),
       pendingBar=$("pendingBar"), pendingText=$("pendingText"), pendingBtn=$("pendingBtn"),
       offBar=$("offBar"), offText=$("offText"), offDesc=$("offDesc");
 
+  // items are always stored oldest -> newest. Display order is a view choice.
   var items=(function(){ try{ var v=JSON.parse(store.get(LS_ITEMS)); return Array.isArray(v)?v:[]; }catch(e){ return []; } })();
   var exportCount=parseInt(store.get(LS_COUNT)||"0",10)||0;
   var autoExport=store.get(LS_AUTO)!=="false";
   var soundOn=store.get(LS_SOUND)!=="false";
+  var newestTop=store.get(LS_ORDER)!=="false";
   var pendingAuto=false;
 
   function save(){ store.set(LS_ITEMS, JSON.stringify(items)); }
@@ -506,20 +541,29 @@
 
   function render(){
     listEl.innerHTML="";
-    items.forEach(function(it,idx){
+    // build a view order but keep the real index for deletion
+    var order=[];
+    for(var i=0;i<items.length;i++) order.push(i);
+    if(newestTop) order.reverse();
+
+    order.forEach(function(realIdx){
+      var it=items[realIdx];
       var li=document.createElement("li");
+      li.className="c"+((realIdx%3)+1);
       li.innerHTML='<span class="stamp"></span><span class="text"></span>'+
                    '<button class="kill" aria-label="Remove">&#10005;</button>';
       li.querySelector(".stamp").textContent=it.time;
       li.querySelector(".text").textContent=it.text;
-      li.querySelector(".kill").addEventListener("click",function(){ removeOne(idx,li); });
+      li.querySelector(".kill").addEventListener("click",function(){ removeOne(realIdx,li); });
       listEl.appendChild(li);
     });
+
     var n=items.length;
     emptyEl.style.display=n?"none":"block";
     countLabel.textContent=n+" remembered";
     nextFileEl.textContent="Next: Memry"+pad2(exportCount+1);
   }
+
   function removeOne(idx,li){
     li.classList.add("leaving");
     setTimeout(function(){ items.splice(idx,1); save(); render(); },210);
@@ -577,9 +621,9 @@
                 '</div><div class="puff p2"></div><div class="puff p3"></div>';
     var r=sendBtn.getBoundingClientRect(), jitter=(Math.random()*70)-35;
     b.style.left=Math.max(10,Math.min(window.innerWidth-70,r.left-12+jitter))+"px";
-    b.style.top=(r.top-46)+"px";
+    b.style.top=(r.bottom+10)+"px";
     document.body.appendChild(b);
-    setTimeout(function(){ b.remove(); },2600);
+    setTimeout(function(){ b.remove(); },2400);
   }
 
   var toastTimer;
@@ -592,7 +636,7 @@
 
   function autoGrow(){
     input.style.height="auto";
-    input.style.height=Math.min(input.scrollHeight,104)+"px";
+    input.style.height=Math.min(input.scrollHeight,120)+"px";
     sendBtn.disabled=input.value.trim().length===0;
   }
   input.addEventListener("input",autoGrow);
@@ -610,7 +654,8 @@
     input.value=""; autoGrow();
     warmBlip(); floatBubble();
     if(navigator.vibrate){ try{ navigator.vibrate(12); }catch(e){} }
-    listScroll.scrollTop=listScroll.scrollHeight;
+    // newest is at the top, so show the top of the list
+    listScroll.scrollTop = newestTop ? 0 : listScroll.scrollHeight;
     input.focus();
   }
 
@@ -634,6 +679,7 @@
     doc.text("Captured "+items.length+(items.length===1?" item":" items")+
              "  \u2022  exported "+clock(now),M,y-16);
     var palette=[[62,107,78],[217,130,43],[138,98,68]];
+    // PDF always reads chronologically, regardless of on-screen order
     items.forEach(function(it,i){
       doc.setFont("helvetica","normal"); doc.setFontSize(11.5);
       var lines=doc.splitTextToSize(it.text,W-M*2-62);
@@ -737,6 +783,11 @@
     soundOn=!soundOn; store.set(LS_SOUND,String(soundOn));
     paintSwitches(); if(soundOn) warmBlip();
   });
+  $("rowOrder").addEventListener("click",function(){
+    newestTop=!newestTop; store.set(LS_ORDER,String(newestTop));
+    paintSwitches(); render();
+    listScroll.scrollTop = newestTop ? 0 : listScroll.scrollHeight;
+  });
   $("rowOffline").addEventListener("click",probeCache);
   $("rowClear").addEventListener("click",function(){
     if(!items.length){ toast("Already empty."); return; }
@@ -749,9 +800,13 @@
   function paintSwitches(){
     autoSwitch.classList.toggle("on",autoExport);
     soundSwitch.classList.toggle("on",soundOn);
+    orderSwitch.classList.toggle("on",newestTop);
     autoDesc.textContent=autoExport
       ? "Prompts you to save once 5 PM rolls around."
       : "Off — you'll export manually.";
+    orderDesc.textContent=newestTop
+      ? "New notes appear right under the text box."
+      : "New notes are added to the bottom of the list.";
   }
 
   /* ---------- offline readiness ---------- */
@@ -759,15 +814,12 @@
     offBar.className="offbar show "+state;
     offText.textContent=msg;
     offDesc.textContent=detail||msg;
-    if(state==="ready"){
-      setTimeout(function(){ offBar.classList.remove("show"); },4000);
-    }
+    if(state==="ready") setTimeout(function(){ offBar.classList.remove("show"); },4000);
   }
 
   function probeCache(){
     if(!("serviceWorker" in navigator)){
-      setOff("fail","Offline mode unavailable in this browser.",
-             "Open the link in Safari, not Chrome.");
+      setOff("fail","Offline mode unavailable in this browser.","Open the link in Safari, not Chrome.");
       return;
     }
     if(!navigator.serviceWorker.controller){
@@ -807,7 +859,6 @@
         navigator.serviceWorker.addEventListener("controllerchange",function(){
           setTimeout(probeCache,400);
         });
-        // if it's already active but not yet controlling, give it a beat
         setTimeout(probeCache,2200);
       })
       .catch(function(err){
@@ -821,15 +872,37 @@
 
   window.addEventListener("online",function(){ toast("Back online."); probeCache(); });
 
+  /* ---------- keyboard handling ----------
+     The composer is pinned below the header, so the keyboard cannot cover it.
+     We still resize the shell to the visible viewport and collapse the header
+     so the list keeps as much room as possible. */
+  var shellEl=document.querySelector(".shell");
   if(window.visualViewport){
     var vv=window.visualViewport;
     var sync=function(){
-      document.querySelector(".shell").style.height=vv.height+"px";
-      listScroll.scrollTop=listScroll.scrollHeight;
+      shellEl.style.height=vv.height+"px";
+      var kbUp=(window.innerHeight - vv.height) > 120;
+      document.body.classList.toggle("kb",kbUp);
+      // keep the page itself from being scrolled up under the notch
+      window.scrollTo(0,0);
     };
     vv.addEventListener("resize",sync);
     vv.addEventListener("scroll",sync);
+    sync();
   }
+  input.addEventListener("focus",function(){
+    document.body.classList.add("kb");
+    setTimeout(function(){ window.scrollTo(0,0); },50);
+  });
+  input.addEventListener("blur",function(){
+    setTimeout(function(){
+      if(!window.visualViewport ||
+         (window.innerHeight - window.visualViewport.height) < 120){
+        document.body.classList.remove("kb");
+      }
+      window.scrollTo(0,0);
+    },80);
+  });
 
   document.addEventListener("touchmove",function(e){
     var t=e.target;
