@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Memry</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Memry" />
+<meta name="theme-color" content="#2F4F3A" />
+<meta name="description" content="Memry — your brain's backup drive." />
+
+<link rel="apple-touch-icon" href="icons/icon-180.png" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="manifest" href="manifest.webmanifest" />
+
+<style>
+  :root{
+    --forest:#2F4F3A;
+    --forest-deep:#1E3527;
+    --forest-light:#3E6B4E;
+    --brown:#6B4A32;
+    --brown-light:#8A6244;
+    --orange:#D9822B;
+    --orange-soft:#E9A05B;
+    --cream:#F6EFE4;
+    --cream-2:#EFE4D3;
+    --ink:#2B2019;
+    --safe-top:env(safe-area-inset-top, 0px);
+    --safe-bot:env(safe-area-inset-bottom, 0px);
+    --safe-l:env(safe-area-inset-left, 0px);
+    --safe-r:env(safe-area-inset-right, 0px);
+  }
+
+  *{
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;   /* kills double-tap zoom without eating taps */
+  }
+
+  html,body{
+    height:100%;margin:0;padding:0;
+    overscroll-behavior:none;
+    overflow:hidden;
+  }
+
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(170deg,#243F2F 0%, #2F4F3A 45%, #4A3729 100%);
+    -webkit-user-select:none;user-select:none;
+    -webkit-touch-callout:none;
+    position:fixed;inset:0;
+  }
+
+  /* app shell uses dynamic viewport height so the iOS keyboard behaves */
+  .shell{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;
+    height:100dvh;
+    background:linear-gradient(180deg,var(--cream) 0%, var(--cream-2) 100%);
+  }
+
+  /* ---------------- header ---------------- */
+  header{
+    background:linear-gradient(135deg,var(--forest-deep) 0%, var(--forest) 58%, var(--brown) 145%);
+    color:var(--cream);
+    padding:calc(var(--safe-top) + 14px) calc(var(--safe-r) + 18px) 14px calc(var(--safe-l) + 18px);
+    flex:0 0 auto;
+    position:relative;
+  }
+  header:after{
+    content:"";position:absolute;left:0;right:0;bottom:0;height:3px;
+    background:linear-gradient(90deg,var(--orange),var(--orange-soft),var(--forest-light));
+  }
+
+  .brand{display:flex;align-items:center;gap:11px;}
+  .logo{
+    width:36px;height:36px;border-radius:50%;flex:0 0 auto;
+    background:radial-gradient(circle at 32% 30%, var(--orange-soft), var(--orange) 62%, #B4661B 100%);
+    display:flex;align-items:center;justify-content:center;font-size:18px;
+    box-shadow:0 3px 10px rgba(0,0,0,.32);
+  }
+  h1{margin:0;font-size:25px;letter-spacing:1.2px;font-weight:700;line-height:1.05;}
+  .tag{font-size:10px;letter-spacing:2.2px;text-transform:uppercase;color:var(--orange-soft);margin-top:2px;}
+
+  .gear{
+    margin-left:auto;background:rgba(255,255,255,.12);border:none;
+    width:38px;height:38px;border-radius:50%;color:var(--cream);
+    font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;flex:0 0 auto;
+  }
+  .gear:active{background:rgba(255,255,255,.24);}
+
+  .meta{margin-top:11px;}
+  .today{font-size:13.5px;font-weight:600;color:#EBDCC6;}
+  .welcome{font-size:12.5px;color:#C2B29B;font-style:italic;margin-top:2px;}
+
+  /* ---------------- pending export banner ---------------- */
+  .pending{
+    display:none;
+    background:linear-gradient(135deg,var(--orange) 0%,#C4701F 100%);
+    color:#FFF6E9;padding:12px calc(var(--safe-r) + 16px) 12px calc(var(--safe-l) + 16px);
+    font-size:13px;font-weight:600;
+    align-items:center;gap:10px;flex:0 0 auto;
+    animation:dropIn .35s ease;
+  }
+  .pending.show{display:flex;}
+  .pending span{flex:1;line-height:1.35;}
+  .pending button{
+    background:#FFF6E9;color:#A8600F;border:none;border-radius:9px;
+    padding:9px 14px;font-size:13px;font-weight:700;flex:0 0 auto;
+  }
+  @keyframes dropIn{from{opacity:0;transform:translateY(-12px);}to{opacity:1;transform:none;}}
+
+  /* ---------------- count strip ---------------- */
+  .count-row{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:11px calc(var(--safe-r) + 18px) 9px calc(var(--safe-l) + 18px);
+    font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;
+    color:#9C8A72;font-weight:700;
+    border-bottom:1px dashed rgba(107,74,50,.28);
+    flex:0 0 auto;background:rgba(107,74,50,.04);
+  }
+
+  /* ---------------- list ---------------- */
+  .list-scroll{
+    flex:1 1 auto;min-height:0;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+    padding:14px calc(var(--safe-r) + 16px) 16px calc(var(--safe-l) + 16px);
+  }
+  ul{list-style:none;margin:0;padding:0;}
+
+  li{
+    background:#FFFDF8;
+    border:1px solid rgba(107,74,50,.16);
+    border-left:5px solid var(--forest-light);
+    border-radius:13px;
+    padding:12px 12px 12px 13px;
+    margin-bottom:10px;
+    display:flex;gap:11px;align-items:flex-start;
+    box-shadow:0 2px 6px rgba(43,32,25,.07);
+    animation:slideIn .32s cubic-bezier(.2,1.1,.4,1);
+  }
+  li:nth-child(3n+2){border-left-color:var(--orange);}
+  li:nth-child(3n+3){border-left-color:var(--brown-light);}
+  @keyframes slideIn{from{opacity:0;transform:translateY(-9px) scale(.97);}to{opacity:1;transform:none;}}
+  li.leaving{animation:fadeOut .24s ease forwards;}
+  @keyframes fadeOut{to{opacity:0;transform:translateX(18px);height:0;margin:0;padding-top:0;padding-bottom:0;border-width:0;}}
+
+  .stamp{
+    font-size:10.5px;font-weight:700;color:#9C8A72;
+    background:rgba(107,74,50,.09);border-radius:6px;
+    padding:3px 6px;white-space:nowrap;margin-top:1px;flex:0 0 auto;
+  }
+  .text{
+    flex:1;font-size:15.5px;line-height:1.45;word-break:break-word;
+    -webkit-user-select:text;user-select:text;
+  }
+  .kill{
+    background:none;border:none;color:#C9B79E;
+    font-size:15px;line-height:1;padding:6px;margin:-4px -2px 0 0;
+    flex:0 0 auto;border-radius:8px;
+  }
+  .kill:active{color:#A33B22;background:rgba(163,59,34,.12);}
+
+  .empty{
+    text-align:center;color:#A8977F;padding:44px 22px;
+    font-style:italic;font-size:14.5px;line-height:1.5;
+  }
+  .empty .big{font-size:38px;display:block;margin-bottom:10px;font-style:normal;}
+
+  /* ---------------- composer ---------------- */
+  .composer{
+    flex:0 0 auto;
+    padding:10px calc(var(--safe-r) + 14px) calc(var(--safe-bot) + 10px) calc(var(--safe-l) + 14px);
+    background:rgba(255,253,248,.97);
+    border-top:1px solid rgba(107,74,50,.18);
+    box-shadow:0 -5px 18px rgba(43,32,25,.07);
+  }
+  .field-wrap{
+    display:flex;align-items:flex-end;gap:9px;
+    background:#FFFDF8;
+    border:2px solid rgba(107,74,50,.26);
+    border-radius:22px;
+    padding:5px 5px 5px 15px;
+    transition:border-color .18s ease;
+  }
+  .field-wrap:focus-within{border-color:var(--orange);}
+
+  #memoryInput{
+    flex:1;border:none;outline:none;background:transparent;
+    font-size:16px;              /* 16px minimum stops iOS auto-zoom */
+    font-family:inherit;color:var(--ink);
+    padding:9px 0;line-height:1.35;
+    resize:none;max-height:104px;min-height:22px;
+    -webkit-user-select:text;user-select:text;
+  }
+  #memoryInput::placeholder{color:#AC9B83;}
+
+  .send{
+    width:38px;height:38px;border-radius:50%;flex:0 0 auto;
+    background:linear-gradient(135deg,var(--orange) 0%,#C4701F 100%);
+    color:#FFF6E9;border:none;font-size:17px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 3px 9px rgba(180,102,27,.34);
+    transition:transform .12s ease,opacity .18s ease;
+  }
+  .send:active{transform:scale(.9);}
+  .send:disabled{opacity:.35;box-shadow:none;}
+
+  /* ---------------- sheet ---------------- */
+  .scrim{
+    position:fixed;inset:0;background:rgba(20,14,10,.5);
+    opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:30;
+    -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+  }
+  .scrim.show{opacity:1;pointer-events:auto;}
+
+  .sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:31;
+    background:linear-gradient(180deg,var(--cream) 0%,var(--cream-2) 100%);
+    border-radius:22px 22px 0 0;
+    padding:10px calc(var(--safe-r) + 18px) calc(var(--safe-bot) + 20px) calc(var(--safe-l) + 18px);
+    transform:translateY(102%);
+    transition:transform .3s cubic-bezier(.25,1,.4,1);
+    box-shadow:0 -10px 40px rgba(0,0,0,.34);
+    max-height:86dvh;overflow-y:auto;
+  }
+  .sheet.show{transform:translateY(0);}
+  .grabber{width:38px;height:5px;border-radius:99px;background:#CDBBA2;margin:0 auto 16px;}
+  .sheet h2{margin:0 0 4px;font-size:18px;color:var(--forest-deep);}
+  .sheet .sub{margin:0 0 18px;font-size:12.5px;color:#9C8A72;}
+
+  .row{
+    display:flex;align-items:center;gap:13px;
+    padding:14px 2px;border-top:1px solid rgba(107,74,50,.15);
+  }
+  .row .ico{font-size:19px;width:26px;text-align:center;flex:0 0 auto;}
+  .row .lbl{flex:1;font-size:15px;font-weight:600;color:var(--ink);}
+  .row .desc{font-size:11.5px;color:#9C8A72;font-weight:400;margin-top:2px;line-height:1.35;}
+  .row.danger .lbl{color:#A33B22;}
+  .row[role="button"]:active{background:rgba(107,74,50,.07);}
+
+  .switch{
+    width:50px;height:30px;border-radius:99px;background:#C6B49A;
+    position:relative;transition:background .22s ease;flex:0 0 auto;
+  }
+  .switch:after{
+    content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;
+    border-radius:50%;background:#FFFDF8;box-shadow:0 1px 4px rgba(0,0,0,.3);
+    transition:transform .22s cubic-bezier(.3,1.5,.6,1);
+  }
+  .switch.on{background:var(--forest-light);}
+  .switch.on:after{transform:translateX(20px);}
+
+  .sheet-close{
+    width:100%;margin-top:18px;padding:14px;border:none;border-radius:13px;
+    background:var(--forest);color:var(--cream);font-size:15px;font-weight:700;
+    font-family:inherit;
+  }
+  .sheet-close:active{filter:brightness(1.12);}
+
+  .fineprint{
+    margin-top:14px;font-size:10.5px;color:#A8977F;text-align:center;line-height:1.5;
+  }
+
+  /* ---------------- bubble + toast ---------------- */
+  .bubble{
+    position:fixed;z-index:12;pointer-events:none;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    animation:float-up 2.5s ease-out forwards;
+  }
+  .bubble .puff{
+    background:rgba(255,253,248,.95);
+    border:2px solid rgba(62,107,78,.45);
+    border-radius:50%;box-shadow:0 4px 14px rgba(0,0,0,.2);
+  }
+  .bubble .p1{width:48px;height:36px;display:flex;align-items:center;justify-content:center;font-size:17px;}
+  .bubble .p2{width:14px;height:14px;}
+  .bubble .p3{width:8px;height:8px;}
+  @keyframes float-up{
+    0%{opacity:0;transform:translateY(16px) scale(.5) rotate(-6deg);}
+    14%{opacity:1;transform:translateY(0) scale(1) rotate(0deg);}
+    100%{opacity:0;transform:translateY(-62vh) scale(.8) rotate(7deg);}
+  }
+
+  .toast{
+    position:fixed;left:50%;z-index:40;
+    bottom:calc(var(--safe-bot) + 92px);
+    transform:translateX(-50%) translateY(120px);
+    background:var(--forest-deep);color:var(--cream);
+    padding:12px 18px;border-radius:13px;
+    font-size:13.5px;font-weight:600;text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.42);
+    border-left:4px solid var(--orange);
+    transition:transform .32s cubic-bezier(.2,1.2,.4,1);
+    max-width:min(90vw,380px);line-height:1.4;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.01ms !important;transition-duration:.01ms !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <header>
+    <div class="brand">
+      <div class="logo">🧠</div>
+      <div>
+        <h1>Memry</h1>
+        <div class="tag">Brain backup</div>
+      </div>
+      <button class="gear" id="gearBtn" aria-label="Options">⚙︎</button>
+    </div>
+    <div class="meta">
+      <div class="today" id="todayDate">—</div>
+      <div class="welcome" id="welcomeMsg">—</div>
+    </div>
+  </header>
+
+  <div class="pending" id="pendingBar">
+    <span id="pendingText">Your 5:00 PM export is ready.</span>
+    <button id="pendingBtn">Save</button>
+  </div>
+
+  <div class="count-row">
+    <span id="countLabel">0 remembered</span>
+    <span id="nextFile">Next: Memry01</span>
+  </div>
+
+  <div class="list-scroll" id="listScroll">
+    <ul id="memoryList"></ul>
+    <div class="empty" id="emptyState">
+      <span class="big">🌰</span>
+      Nothing stashed yet.<br />Go collect some acorns of wisdom.
+    </div>
+  </div>
+
+  <div class="composer">
+    <div class="field-wrap">
+      <textarea id="memoryInput" rows="1" enterkeyhint="done" autocomplete="off"
+        autocapitalize="sentences" placeholder="What did they just tell you?"></textarea>
+      <button class="send" id="sendBtn" aria-label="Remember this" disabled>↑</button>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<div class="sheet" id="sheet" role="dialog" aria-label="Options">
+  <div class="grabber"></div>
+  <h2>Options</h2>
+  <p class="sub" id="sheetSub">Everything stays on this iPhone.</p>
+
+  <div class="row" id="rowExport" role="button" tabindex="0">
+    <div class="ico">📄</div>
+    <div class="lbl">Export PDF now
+      <div class="desc">Opens the share sheet — save to Files, Mail, or AirDrop.</div>
+    </div>
+  </div>
+
+  <div class="row" id="rowAuto" role="button" tabindex="0">
+    <div class="ico">🕔</div>
+    <div class="lbl">5:00 PM auto-export
+      <div class="desc" id="autoDesc">Prompts you to save once 5 PM rolls around.</div>
+    </div>
+    <div class="switch on" id="autoSwitch"></div>
+  </div>
+
+  <div class="row" id="rowSound" role="button" tabindex="0">
+    <div class="ico">🔔</div>
+    <div class="lbl">Chime on save
+      <div class="desc">A warm, low note each time you add something.</div>
+    </div>
+    <div class="switch on" id="soundSwitch"></div>
+  </div>
+
+  <div class="row danger" id="rowClear" role="button" tabindex="0">
+    <div class="ico">🗑</div>
+    <div class="lbl">Delete All
+      <div class="desc">Clears the list without exporting anything.</div>
+    </div>
+  </div>
+
+  <button class="sheet-close" id="sheetClose">Done</button>
+  <div class="fineprint">
+    Memry v1.0 &nbsp;·&nbsp; works fully offline &nbsp;·&nbsp; no accounts, no tracking
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   MiniPDF — embedded PDF writer. No libraries, no network.
+   US Letter, Helvetica / Helvetica-Bold, WinAnsi encoding.
+   ============================================================ */
+(function(global){
+  "use strict";
+
+  var HN = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,
+            556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,
+            1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,
+            667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,
+            333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,
+            556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+  var HB = [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,
+            556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,
+            975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,
+            667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,
+            333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,
+            611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
+
+  var UNI = {0x20AC:0x80,0x201A:0x82,0x0192:0x83,0x201E:0x84,0x2026:0x85,0x2020:0x86,
+             0x2021:0x87,0x02C6:0x88,0x2030:0x89,0x0160:0x8A,0x2039:0x8B,0x0152:0x8C,
+             0x017D:0x8E,0x2018:0x91,0x2019:0x92,0x201C:0x93,0x201D:0x94,0x2022:0x95,
+             0x2013:0x96,0x2014:0x97,0x02DC:0x98,0x2122:0x99,0x0161:0x9A,0x203A:0x9B,
+             0x0153:0x9C,0x017E:0x9E,0x0178:0x9F};
+
+  function toWinAnsi(s){
+    var out = "";
+    for(var i=0;i<s.length;i++){
+      var c = s.charCodeAt(i);
+      if(c < 256) out += String.fromCharCode(c);
+      else if(UNI[c] !== undefined) out += String.fromCharCode(UNI[c]);
+    }
+    return out;
+  }
+  function esc(s){
+    return s.replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)").replace(/[\r\n]/g," ");
+  }
+  function widthOf(s, size, bold){
+    var W = bold ? HB : HN, t = 0;
+    for(var i=0;i<s.length;i++){
+      var c = s.charCodeAt(i);
+      t += (c >= 32 && c <= 126) ? W[c-32] : (c === 32 ? 278 : 556);
+    }
+    return t * size / 1000;
+  }
+
+  function MiniPDF(){
+    this.W = 612; this.H = 792;
+    this.pages = [[]]; this.cur = 0;
+    this.fs = 12; this.bold = false;
+    this.txt = [0,0,0]; this.fill = [0,0,0];
+    var self = this;
+    this.internal = {
+      pageSize:{ getWidth:function(){return self.W;}, getHeight:function(){return self.H;} },
+      getNumberOfPages:function(){ return self.pages.length; }
+    };
+  }
+  var P = MiniPDF.prototype;
+  function n3(v){ return (Math.round(v*1000)/1000); }
+
+  P._ops = function(){ return this.pages[this.cur]; };
+  P.addPage = function(){ this.pages.push([]); this.cur = this.pages.length-1; return this; };
+  P.setPage = function(n){ this.cur = Math.max(0, Math.min(this.pages.length-1, n-1)); return this; };
+  P.setFont = function(_f, style){ this.bold = (style === "bold"); return this; };
+  P.setFontSize = function(n){ this.fs = n; return this; };
+  P.setTextColor = function(r,g,b){ this.txt = [r,g,b]; return this; };
+  P.setFillColor = function(r,g,b){ this.fill = [r,g,b]; return this; };
+
+  P.rect = function(x,y,w,h){
+    var c = this.fill;
+    this._ops().push(n3(c[0]/255)+" "+n3(c[1]/255)+" "+n3(c[2]/255)+" rg "+
+                     n3(x)+" "+n3(this.H-y-h)+" "+n3(w)+" "+n3(h)+" re f");
+    return this;
+  };
+
+  P.text = function(str,x,y,opts){
+    opts = opts || {};
+    var lines = Array.isArray(str) ? str : [String(str)];
+    var c = this.txt, font = this.bold ? "/F2" : "/F1", lead = this.fs * 1.3;
+    for(var i=0;i<lines.length;i++){
+      var raw = toWinAnsi(String(lines[i])), px = x;
+      if(opts.align === "right")  px = x - widthOf(raw, this.fs, this.bold);
+      if(opts.align === "center") px = x - widthOf(raw, this.fs, this.bold)/2;
+      this._ops().push("BT "+font+" "+n3(this.fs)+" Tf "+
+        n3(c[0]/255)+" "+n3(c[1]/255)+" "+n3(c[2]/255)+" rg "+
+        n3(px)+" "+n3(this.H-(y+i*lead))+" Td ("+esc(raw)+") Tj ET");
+    }
+    return this;
+  };
+
+  P.splitTextToSize = function(text, maxW){
+    var self = this, out = [];
+    String(text).split(/\r?\n/).forEach(function(para){
+      var words = toWinAnsi(para).split(/\s+/).filter(Boolean), line = "";
+      if(!words.length){ out.push(""); return; }
+      words.forEach(function(w){
+        while(widthOf(w, self.fs, self.bold) > maxW && w.length > 1){
+          var cut = w.length;
+          while(cut > 1 && widthOf(w.slice(0,cut), self.fs, self.bold) > maxW) cut--;
+          if(line){ out.push(line); line = ""; }
+          out.push(w.slice(0,cut));
+          w = w.slice(cut);
+        }
+        var test = line ? line + " " + w : w;
+        if(widthOf(test, self.fs, self.bold) <= maxW) line = test;
+        else { if(line) out.push(line); line = w; }
+      });
+      if(line) out.push(line);
+    });
+    return out.length ? out : [""];
+  };
+
+  P.output = function(){
+    var W = this.W, H = this.H, np = this.pages.length;
+    var kids = [], offsets = [], objs = [];
+    for(var i=0;i<np;i++) kids.push((5 + i*2) + " 0 R");
+
+    objs[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+    objs[2] = "<< /Type /Pages /Count "+np+" /Kids ["+kids.join(" ")+"] >>";
+    objs[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
+    objs[4] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>";
+
+    for(var p=0;p<np;p++){
+      var pg = 5 + p*2, ct = 6 + p*2, stream = this.pages[p].join("\n");
+      objs[pg] = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+W+" "+H+"] "+
+                 "/Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents "+ct+" 0 R >>";
+      objs[ct] = "<< /Length "+stream.length+" >>\nstream\n"+stream+"\nendstream";
+    }
+
+    var out = "%PDF-1.4\n%\xE2\xE3\xCF\xD3\n";
+    for(var k=1;k<objs.length;k++){
+      offsets[k] = out.length;
+      out += k + " 0 obj\n" + objs[k] + "\nendobj\n";
+    }
+    var xref = out.length, total = objs.length;
+    out += "xref\n0 " + total + "\n0000000000 65535 f \n";
+    for(var m=1;m<total;m++) out += ("0000000000" + offsets[m]).slice(-10) + " 00000 n \n";
+    out += "trailer\n<< /Size "+total+" /Root 1 0 R >>\nstartxref\n"+xref+"\n%%EOF";
+
+    var bytes = new Uint8Array(out.length);
+    for(var z=0;z<out.length;z++) bytes[z] = out.charCodeAt(z) & 0xFF;
+    return bytes;
+  };
+
+  global.MiniPDF = MiniPDF;
+})(window);
+
+
+/* ============================================================
+   Memry — iOS
+   ============================================================ */
+(function(){
+  "use strict";
+
+  var LS_ITEMS="memry.items.v1", LS_COUNT="memry.exportCount.v1",
+      LS_AUTO="memry.autoExport.v1", LS_SOUND="memry.sound.v1",
+      LS_LASTAUTO="memry.lastAutoDate.v1";
+
+  var mem = {};
+  var store = {
+    get:function(k){ try{ var v=localStorage.getItem(k); return v===null ? (k in mem?mem[k]:null) : v; }
+                     catch(e){ return (k in mem)?mem[k]:null; } },
+    set:function(k,v){ mem[k]=v; try{ localStorage.setItem(k,v); }catch(e){} }
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var input=$("memoryInput"), sendBtn=$("sendBtn"), listEl=$("memoryList"),
+      listScroll=$("listScroll"), emptyEl=$("emptyState"), countLabel=$("countLabel"),
+      nextFileEl=$("nextFile"), toastEl=$("toast"), sheet=$("sheet"), scrim=$("scrim"),
+      autoSwitch=$("autoSwitch"), soundSwitch=$("soundSwitch"), autoDesc=$("autoDesc"),
+      pendingBar=$("pendingBar"), pendingText=$("pendingText"), pendingBtn=$("pendingBtn");
+
+  var items = (function(){
+    try{ var v = JSON.parse(store.get(LS_ITEMS)); return Array.isArray(v)?v:[]; }catch(e){ return []; }
+  })();
+  var exportCount = parseInt(store.get(LS_COUNT)||"0",10) || 0;
+  var autoExport  = store.get(LS_AUTO) !== "false";
+  var soundOn     = store.get(LS_SOUND) !== "false";
+  var pendingAuto = false;
+
+  function save(){ store.set(LS_ITEMS, JSON.stringify(items)); }
+
+  var WELCOMES = [
+    "Remember this — your future self is counting on you.",
+    "Quick, jot it down before it evaporates!",
+    "Brain full? Park it here instead.",
+    "If it matters, it goes in the box.",
+    "Today's wisdom, tomorrow's documentation.",
+    "Catch it now, forget it never.",
+    "Nothing important escapes on my watch.",
+    "One brain dump, coming right up."
+  ];
+
+  function longDate(d){ return d.toLocaleDateString(undefined,{weekday:"long",year:"numeric",month:"long",day:"numeric"}); }
+  function shortDate(d){ var p=function(n){return String(n).padStart(2,"0");}; return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate()); }
+  function clock(d){ return d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}); }
+  function pad2(n){ return String(n).padStart(2,"0"); }
+
+  $("todayDate").textContent = longDate(new Date());
+  $("welcomeMsg").textContent = WELCOMES[Math.floor(Math.random()*WELCOMES.length)];
+
+  /* ---------- render ---------- */
+  function render(){
+    listEl.innerHTML = "";
+    items.forEach(function(it, idx){
+      var li = document.createElement("li");
+      li.innerHTML = '<span class="stamp"></span><span class="text"></span>' +
+                     '<button class="kill" aria-label="Remove">&#10005;</button>';
+      li.querySelector(".stamp").textContent = it.time;
+      li.querySelector(".text").textContent = it.text;
+      li.querySelector(".kill").addEventListener("click", function(){ removeOne(idx, li); });
+      listEl.appendChild(li);
+    });
+    var n = items.length;
+    emptyEl.style.display = n ? "none" : "block";
+    countLabel.textContent = n + " remembered";
+    nextFileEl.textContent = "Next: Memry" + pad2(exportCount+1);
+  }
+
+  function removeOne(idx, li){
+    li.classList.add("leaving");
+    setTimeout(function(){ items.splice(idx,1); save(); render(); }, 210);
+  }
+
+  /* ---------- audio (iOS needs a gesture to unlock) ---------- */
+  var ctx = null, unlocked = false;
+  function unlockAudio(){
+    if(unlocked) return;
+    try{
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      if(!ctx) ctx = new AC();
+      if(ctx.state === "suspended") ctx.resume();
+      var b = ctx.createBuffer(1,1,22050);
+      var s = ctx.createBufferSource();
+      s.buffer = b; s.connect(ctx.destination); s.start(0);
+      unlocked = true;
+    }catch(e){}
+  }
+  document.addEventListener("touchend", unlockAudio, {once:false, passive:true});
+  document.addEventListener("click", unlockAudio, {once:false});
+
+  function warmBlip(){
+    if(!soundOn) return;
+    try{
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      if(!ctx) ctx = new AC();
+      if(ctx.state === "suspended") ctx.resume();
+      var now = ctx.currentTime;
+      var master = ctx.createGain(), filter = ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(900, now);
+      filter.Q.value = 0.6;
+      master.gain.setValueAtTime(0.0001, now);
+      master.gain.exponentialRampToValueAtTime(0.16, now + 0.05);
+      master.gain.exponentialRampToValueAtTime(0.0001, now + 0.62);
+      filter.connect(master); master.connect(ctx.destination);
+      [[220,0,0.45],[277.18,0.10,0.34],[110,0,0.22]].forEach(function(v){
+        var osc = ctx.createOscillator(), g = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(v[0], now + v[1]);
+        g.gain.setValueAtTime(0.0001, now + v[1]);
+        g.gain.exponentialRampToValueAtTime(v[2], now + v[1] + 0.045);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + v[1] + 0.55);
+        osc.connect(g); g.connect(filter);
+        osc.start(now + v[1]); osc.stop(now + v[1] + 0.7);
+      });
+    }catch(e){}
+  }
+
+  /* ---------- thought bubble ---------- */
+  var ICONS = ["\uD83D\uDCAD","\uD83E\uDDE0","\u2728","\uD83D\uDCCC","\uD83C\uDF42","\uD83D\uDCA1","\uD83C\uDF3F"];
+  function floatBubble(){
+    var b = document.createElement("div");
+    b.className = "bubble";
+    b.innerHTML = '<div class="puff p1">'+ICONS[Math.floor(Math.random()*ICONS.length)]+
+                  '</div><div class="puff p2"></div><div class="puff p3"></div>';
+    var r = sendBtn.getBoundingClientRect();
+    var jitter = (Math.random()*70) - 35;
+    b.style.left = Math.max(10, Math.min(window.innerWidth - 70, r.left - 12 + jitter)) + "px";
+    b.style.top  = (r.top - 46) + "px";
+    document.body.appendChild(b);
+    setTimeout(function(){ b.remove(); }, 2600);
+  }
+
+  var toastTimer;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 3600);
+  }
+
+  /* ---------- composer ---------- */
+  function autoGrow(){
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 104) + "px";
+    sendBtn.disabled = input.value.trim().length === 0;
+  }
+  input.addEventListener("input", autoGrow);
+
+  input.addEventListener("keydown", function(e){
+    if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); addMemory(); }
+  });
+  sendBtn.addEventListener("click", function(e){ e.preventDefault(); addMemory(); });
+
+  function addMemory(){
+    var text = input.value.trim();
+    if(!text) return;
+    var now = new Date();
+    items.push({ text:text, time:clock(now), iso:now.toISOString() });
+    save(); render();
+    input.value = ""; autoGrow();
+    warmBlip(); floatBubble();
+    if(navigator.vibrate) { try{ navigator.vibrate(12); }catch(e){} }
+    listScroll.scrollTop = listScroll.scrollHeight;
+    input.focus();
+  }
+
+  /* ---------- build the PDF ---------- */
+  function buildPDF(now, fileName){
+    var doc = new MiniPDF();
+    var W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+    var M = 56, y = 0;
+
+    function headerBand(){
+      doc.setFillColor(47,79,58);   doc.rect(0,0,W,104);
+      doc.setFillColor(217,130,43); doc.rect(0,104,W,6);
+      doc.setFont("helvetica","bold"); doc.setFontSize(23);
+      doc.setTextColor(246,239,228);
+      doc.text("Things I Learned Today", M, 52);
+      doc.setFont("helvetica","normal"); doc.setFontSize(11.5);
+      doc.setTextColor(233,160,91);
+      doc.text(longDate(now), M, 74);
+      doc.setFontSize(9); doc.setTextColor(210,198,180);
+      doc.text("Memry  \u2022  " + fileName.replace(".pdf",""), W - M, 74, {align:"right"});
+      y = 150;
+    }
+
+    headerBand();
+    doc.setFontSize(10); doc.setTextColor(120,105,88);
+    doc.text("Captured " + items.length + (items.length===1?" item":" items") +
+             "  \u2022  exported " + clock(now), M, y - 16);
+
+    var palette = [[62,107,78],[217,130,43],[138,98,68]];
+    items.forEach(function(it,i){
+      doc.setFont("helvetica","normal"); doc.setFontSize(11.5);
+      var lines = doc.splitTextToSize(it.text, W - M*2 - 62);
+      var blockH = Math.max(30, lines.length*15 + 16);
+      if(y + blockH > H - 60){ doc.addPage(); headerBand(); }
+      var c = palette[i % 3];
+      doc.setFillColor(c[0],c[1],c[2]); doc.rect(M, y-10, 3.5, blockH-6);
+      doc.setFont("helvetica","bold"); doc.setFontSize(8.5);
+      doc.setTextColor(150,133,112); doc.text(it.time, M+12, y);
+      doc.setFont("helvetica","normal"); doc.setFontSize(11.5);
+      doc.setTextColor(43,32,25); doc.text(lines, M+62, y);
+      y += blockH;
+    });
+
+    var pages = doc.internal.getNumberOfPages();
+    for(var p=1;p<=pages;p++){
+      doc.setPage(p);
+      doc.setFont("helvetica","normal"); doc.setFontSize(8.5);
+      doc.setTextColor(160,145,125);
+      doc.text("Generated by Memry", M, H-30);
+      doc.text("Page "+p+" of "+pages, W-M, H-30, {align:"right"});
+    }
+    return doc.output();
+  }
+
+  /* ---------- export (must run inside a user gesture on iOS) ---------- */
+  function doExport(reason){
+    if(!items.length){ toast("Nothing to export — the vault is empty."); return; }
+
+    var now = new Date();
+    var nextNum = exportCount + 1;
+    var fileName = "Memry" + pad2(nextNum) + ".pdf";
+    var bytes = buildPDF(now, fileName);
+    var blob = new Blob([bytes], {type:"application/pdf"});
+
+    function committed(){
+      exportCount = nextNum;
+      store.set(LS_COUNT, String(exportCount));
+      items = []; save(); render();
+      hidePending();
+      toast("Saved " + fileName + ". List cleared!");
+    }
+
+    // Preferred on iOS: the native share sheet (Files / Mail / AirDrop).
+    var canShareFiles = false;
+    var file = null;
+    try{
+      file = new File([blob], fileName, {type:"application/pdf"});
+      canShareFiles = !!(navigator.canShare && navigator.canShare({files:[file]}));
+    }catch(e){ canShareFiles = false; }
+
+    if(canShareFiles){
+      navigator.share({ files:[file], title:"Things I Learned Today" })
+        .then(committed)
+        .catch(function(err){
+          if(err && err.name === "AbortError"){
+            toast("Export cancelled — nothing was deleted.");
+          } else {
+            fallbackOpen(blob, fileName, committed);
+          }
+        });
+      return;
+    }
+    fallbackOpen(blob, fileName, committed);
+  }
+
+  // If sharing isn't available, open the PDF so it can be saved manually.
+  function fallbackOpen(blob, fileName, committed){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = fileName; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){
+      try{ window.open(url, "_blank"); }catch(e){}
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 30000);
+    }, 120);
+    committed();
+    toast("PDF opened — tap the share icon to save it to Files.");
+  }
+
+  /* ---------- pending 5 PM export ---------- */
+  function showPending(){
+    pendingAuto = true;
+    pendingText.textContent = "It's after 5 PM — " + items.length +
+      (items.length===1 ? " thing is" : " things are") + " ready to export.";
+    pendingBar.classList.add("show");
+  }
+  function hidePending(){
+    pendingAuto = false;
+    pendingBar.classList.remove("show");
+  }
+  pendingBtn.addEventListener("click", function(){
+    store.set(LS_LASTAUTO, shortDate(new Date()));
+    doExport("auto");
+  });
+
+  function checkAuto(){
+    if(!autoExport || !items.length){ if(!items.length) hidePending(); return; }
+    var now = new Date();
+    if(store.get(LS_LASTAUTO) === shortDate(now)) return;
+    if(now.getHours() >= 17 && !pendingAuto){
+      showPending();
+      warmBlip();
+    }
+  }
+
+  /* ---------- options sheet ---------- */
+  function openSheet(){ scrim.classList.add("show"); sheet.classList.add("show"); input.blur(); }
+  function closeSheet(){ scrim.classList.remove("show"); sheet.classList.remove("show"); }
+
+  $("gearBtn").addEventListener("click", openSheet);
+  $("sheetClose").addEventListener("click", closeSheet);
+  scrim.addEventListener("click", closeSheet);
+
+  $("rowExport").addEventListener("click", function(){
+    closeSheet();
+    setTimeout(function(){ doExport("manual"); }, 180);
+  });
+
+  $("rowAuto").addEventListener("click", function(){
+    autoExport = !autoExport;
+    store.set(LS_AUTO, String(autoExport));
+    paintSwitches();
+    if(!autoExport) hidePending(); else checkAuto();
+  });
+
+  $("rowSound").addEventListener("click", function(){
+    soundOn = !soundOn;
+    store.set(LS_SOUND, String(soundOn));
+    paintSwitches();
+    if(soundOn) warmBlip();
+  });
+
+  $("rowClear").addEventListener("click", function(){
+    if(!items.length){ toast("Already empty."); return; }
+    if(confirm("Delete all " + items.length + " memories? This can't be undone.")){
+      items = []; save(); render(); hidePending(); closeSheet();
+      toast("Poof. Slate wiped clean.");
+    }
+  });
+
+  function paintSwitches(){
+    autoSwitch.classList.toggle("on", autoExport);
+    soundSwitch.classList.toggle("on", soundOn);
+    autoDesc.textContent = autoExport
+      ? "Prompts you to save once 5 PM rolls around."
+      : "Off — you'll export manually.";
+  }
+
+  /* ---------- keyboard / viewport handling ---------- */
+  if(window.visualViewport){
+    var vv = window.visualViewport;
+    var sync = function(){
+      var hidden = Math.max(0, (window.innerHeight - vv.height - vv.offsetTop));
+      document.documentElement.style.setProperty("--kb", hidden + "px");
+      document.querySelector(".shell").style.height = vv.height + "px";
+      listScroll.scrollTop = listScroll.scrollHeight;
+    };
+    vv.addEventListener("resize", sync);
+    vv.addEventListener("scroll", sync);
+  }
+
+  // stop the page itself from rubber-banding; let the list and sheet scroll
+  document.addEventListener("touchmove", function(e){
+    var t = e.target;
+    if(!t || typeof t.closest !== "function") return;
+    if(!t.closest(".list-scroll, .sheet, #memoryInput")) e.preventDefault();
+  }, {passive:false});
+
+  // block pinch-zoom (double-tap zoom is handled by touch-action in CSS)
+  document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
+
+  /* ---------- lifecycle: iOS freezes timers in the background ---------- */
+  document.addEventListener("visibilitychange", function(){
+    if(!document.hidden){
+      $("todayDate").textContent = longDate(new Date());
+      checkAuto();
+    }
+  });
+  window.addEventListener("pageshow", checkAuto);
+  setInterval(function(){
+    $("todayDate").textContent = longDate(new Date());
+    checkAuto();
+  }, 30000);
+
+  /* ---------- service worker (offline) ---------- */
+  if("serviceWorker" in navigator && location.protocol.indexOf("http") === 0){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){});
+    });
+  }
+
+  /* ---------- go ---------- */
+  paintSwitches();
+  render();
+  autoGrow();
+  setTimeout(checkAuto, 900);
+
+  var standalone = window.navigator.standalone === true ||
+                   window.matchMedia("(display-mode: standalone)").matches;
+  if(!standalone){
+    $("sheetSub").textContent = "Tip: Share \u2192 Add to Home Screen to run it fullscreen & offline.";
+  }
+})();
+</script>
+</body>
+</html>
